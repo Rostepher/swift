@@ -9,12 +9,15 @@
 
 from __future__ import absolute_import, unicode_literals
 
+from . import cmake as _cmake
 from . import xcrun as _xcrun
 
 
 __all__ = [
+    'cmake',
     'xcrun',
 ]
 
 
+cmake = _cmake.CMakeWrapper()
 xcrun = _xcrun.XcrunWrapper()

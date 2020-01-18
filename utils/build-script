@@ -32,18 +32,19 @@ from build_swift.build_swift.constants import BUILD_SCRIPT_IMPL_PATH
 from build_swift.build_swift.constants import SWIFT_BUILD_ROOT
 from build_swift.build_swift.constants import SWIFT_REPO_NAME
 from build_swift.build_swift.constants import SWIFT_SOURCE_ROOT
+from build_swift.build_swift.wrappers.cmake import CMakeCache
+from build_swift.build_swift.wrappers.cmake import CMakeWrapper
 
 import six
 
 from swift_build_support.swift_build_support import products
 from swift_build_support.swift_build_support import shell
 from swift_build_support.swift_build_support import targets
-from swift_build_support.swift_build_support import workspace
-from swift_build_support.swift_build_support.cmake import CMake
 from swift_build_support.swift_build_support.host_specific_configuration \
     import HostSpecificConfiguration
 from swift_build_support.swift_build_support.targets import StdlibDeploymentTarget
 from swift_build_support.swift_build_support.toolchain import host_toolchain
+from swift_build_support.swift_build_support.workspace import Workspace
 
 
 # -----------------------------------------------------------------------------
@@ -348,13 +349,151 @@ def apply_default_arguments(toolchain, args):
 
 
 # -----------------------------------------------------------------------------
+# Product Builds
+
+def check_cmake_version(args, toolchain, workspace):
+    """
+    """
+
+    if platform.platform() == 'Linux':
+        return
+
+    cmake_path = args.cmake or shell.which('cmake') or 'cmake'
+    cmake = CMakeWrapper(cmake_path)
+
+    # If we can't determine the installed CMake version we have an issue.
+    installed_version = cmake.version
+    if installed_version is None:
+        fatal_error('Unable to determine the version of {}'.format(
+            cmake.executable))
+
+    builder = products.CMake.builder(args, toolchain, workspace)
+
+    # Return if the CMake sources are not checked out.
+    if not os.path.exists(builder.source_dir):
+        return
+
+    # Return if we can't determine the CMake source version.
+    source_version = builder.source_version
+    if source_version is None:
+        return
+
+    # Skip building if the installed CMake is new enough.
+    if installed_version >= source_version:
+        return
+
+    builder.build()
+
+    if os.path.exists(builder.binary_path):
+        args.cmake = builder.binary_path
+        toolchain.cmake = builder.binary_path
+
+
+# -----------------------------------------------------------------------------
+# Default CMake Options and Build Args
+
+def common_cmake_options(args, toolchain):
+    """Return options used for all products, including LLVM/Clang
+    """
+
+    cache = CMakeCache()
+
+    sanitizers = []
+    if args.enable_asan:
+        sanitizers.append('Address')
+    if args.enable_ubsan:
+        sanitizers.append('Undefined')
+    if args.enable_tsan:
+        sanitizers.append('Thread')
+    if args.enable_lsan:
+        sanitizers.append('Leaks')
+
+    if sanitizers:
+        cache.set('LLVM_USE_SANITIZER', sanitizers)
+
+    if args.enable_sanitize_coverage:
+        cache.set('LLVM_USE_SANITIZE_COVERAGE', True)
+
+    if args.export_compile_commands:
+        cache.set('CMAKE_EXPORT_COMPILE_COMMANDS', True)
+
+    if args.distcc:
+        cache.set('CMAKE_C_COMPILER_LAUNCHER', toolchain.distcc, 'PATH')
+        cache.set('CMAKE_CXX_COMPILER_LAUNCHER', toolchain.distcc, 'PATH')
+
+    if args.cmake_c_launcher:
+        cache.set('CMAKE_C_COMPILER_LAUNCHER', args.cmake_c_launcher, 'PATH')
+    if args.cmake_cxx_launcher:
+        cache.set(
+            'CMAKE_CXX_COMPILER_LAUNCHER', args.cmake_cxx_launcher, 'PATH')
+
+    cache.set('CMAKE_C_COMPILER', toolchain.cc, 'PATH')
+    cache.set('CMAKE_CXX_COMPILER', toolchain.cxx, 'PATH')
+    cache.set('CMAKE_LIBTOOL', toolchain.libtool, 'PATH')
+
+    if args.cmake_generator == 'Xcode':
+        cache.set(
+            'CMAKE_CONFIGURATION_TYPES',
+            ['Debug', 'Release', 'MinSizeRel', 'RelWithDebInfo'])
+
+    if args.clang_user_visible_version:
+        components = args.clang_user_visible_version
+        major, minor, patch = components[0:3]
+        cache.set('LLVM_VERSION_MAJOR', major, 'STRING')
+        cache.set('LLVM_VERSION_MINOR', minor, 'STRING')
+        cache.set('LLVM_VERSION_PATCH', patch, 'STRING')
+        cache.set('CLANG_VERSION_MAJOR', major, 'STRING')
+        cache.set('CLANG_VERSION_MINOR', minor, 'STRING')
+        cache.set('CLANG_VERSION_PATCH', patch, 'STRING')
+
+    if args.cmake_generator == 'Ninja' and args.build_ninja:
+        cache.set('CMAKE_MAKE_PROGRAM', toolchain.ninja, 'PATH')
+    elif args.cmake_generator == 'Ninja' and toolchain.ninja is not None:
+        cache.set('CMAKE_MAKE_PROGRAM', toolchain.ninja, 'PATH')
+
+    return ['-G', args.cmake_generator] + cache.args
+
+
+def cmake_build_args(args, toolchain):
+    """Return arguments to the build tool used for all products
+    """
+
+    jobs = args.build_jobs
+    if args.distcc:
+        jobs = shell.capture(
+            [toolchain.distcc, '-j'],
+            dry_run=False,
+            echo=False).rstrip()
+
+    build_args = list(args.build_args)
+
+    if args.cmake_generator == 'Ninja':
+        build_args += ['-j{}'.format(jobs)]
+        if args.verbose_build:
+            build_args += ['-v']
+
+    elif args.cmake_generator == 'Unix Makefiles':
+        build_args += ['-j{}'.format(jobs)]
+        if args.verbose_build:
+            build_args += ['VERBOSE=1']
+
+    elif args.cmake_generator == 'Xcode':
+        build_args += [
+            '-parallelizeTargets',
+            '-jobs', six.text_type(jobs)
+        ]
+
+    return build_args
+
+
+# -----------------------------------------------------------------------------
 # Build Script Impl Wrapping
 
 class BuildScriptInvocation(object):
     """Represent a single build script invocation.
     """
 
-    def __init__(self, toolchain, args):
+    def __init__(self, toolchain, args, workspace):
         self.toolchain = toolchain
         self.args = args
 
@@ -434,9 +573,9 @@ class BuildScriptInvocation(object):
             "--cmake-generator", args.cmake_generator,
             "--build-jobs", str(args.build_jobs),
             "--common-cmake-options=%s" % ' '.join(
-                pipes.quote(opt) for opt in cmake.common_options()),
+                pipes.quote(opt) for opt in common_cmake_options()),
             "--build-args=%s" % ' '.join(
-                pipes.quote(arg) for arg in cmake.build_args()),
+                pipes.quote(arg) for arg in cmake_build_args()),
         ]
 
         # Compute any product specific cmake arguments.
@@ -1171,13 +1310,13 @@ def main_normal():
     if args.cmake is not None:
         toolchain.cmake = args.cmake
 
-    cmake = CMake(args=args, toolchain=toolchain)
+    workspace = Workspace(
+        source_root=SWIFT_SOURCE_ROOT,
+        build_root=os.path.join(SWIFT_BUILD_ROOT, args.build_subdir))
+
     # Check the CMake version is sufficient on Linux and build from source
     # if not.
-    cmake_path = cmake.check_cmake_version(SWIFT_SOURCE_ROOT, SWIFT_BUILD_ROOT)
-    if cmake_path is not None:
-        toolchain.cmake = cmake_path
-        args.cmake = cmake_path
+    check_cmake_version(args, toolchain, workspace)
 
     # Preprocess the arguments to apply defaults.
     apply_default_arguments(toolchain, args)
@@ -1186,7 +1325,7 @@ def main_normal():
     validate_arguments(toolchain, args)
 
     # Create the build script invocation.
-    invocation = BuildScriptInvocation(toolchain, args)
+    invocation = BuildScriptInvocation(toolchain, args, workspace)
 
     # Sanitize the runtime environment.
     initialize_runtime_environment()

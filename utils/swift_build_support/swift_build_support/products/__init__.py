@@ -11,6 +11,7 @@
 # ----------------------------------------------------------------------------
 
 from .benchmarks import Benchmarks
+from .cmake import CMake
 from .cmark import CMark
 from .foundation import Foundation
 from .indexstoredb import IndexStoreDB
@@ -32,9 +33,11 @@ from .tsan_libdispatch import TSanLibDispatch
 from .xctest import XCTest
 
 __all__ = [
+    'Benchmarks',
+    'CMake',
     'CMark',
-    'Ninja',
     'Foundation',
+    'IndexStoreDB',
     'LibCXX',
     'LibDispatch',
     'LibICU',
@@ -42,15 +45,14 @@ __all__ = [
     'LLDB',
     'LLVM',
     'Ninja',
+    'Ninja',
     'PythonKit',
-    'Swift',
-    'SwiftPM',
-    'XCTest',
-    'SwiftSyntax',
     'SKStressTester',
-    'SwiftEvolve',
-    'IndexStoreDB',
     'SourceKitLSP',
-    'Benchmarks',
+    'Swift',
+    'SwiftEvolve',
+    'SwiftPM',
+    'SwiftSyntax',
     'TSanLibDispatch',
+    'XCTest',
 ]
