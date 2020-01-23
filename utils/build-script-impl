@@ -2612,18 +2612,10 @@ done
 # END OF TEST PHASE
 
 
-LIPO_SRC_DIRS=()
-
 for host in "${ALL_HOSTS[@]}"; do
     # Calculate the directory to install products in to.
     host_install_destdir=$(get_host_install_destdir ${host})
     host_install_prefix=$(get_host_install_prefix ${host})
-
-    # Identify the destdirs to pass to lipo. Must happen even if the install action
-    # is to be skipped.
-    if [[ $(should_include_host_in_lipo ${host}) ]]; then
-        LIPO_SRC_DIRS+=( "${host_install_destdir}" )
-    fi
 
     # Skip this pass when the only action to execute can't match.
     if ! [[ $(should_execute_host_actions_for_phase ${host} install) ]]; then
@@ -3044,6 +3036,18 @@ for host in "${ALL_HOSTS[@]}"; do
     build_and_test_installable_package ${host}
 done
 
+LIPO_SRC_DIRS=()
+for host in "${ALL_HOSTS[@]}"; do
+    # Calculate the directory to install products in to.
+    host_install_destdir=$(get_host_install_destdir ${host})
+
+    # Identify the destdirs to pass to lipo. Must happen even if the install action
+    # is to be skipped.
+    if [[ $(should_include_host_in_lipo ${host}) ]]; then
+        LIPO_SRC_DIRS+=("${host_install_destdir}")
+    fi
+done
+
 # Lipo those products which require it, optionally build and test an installable package.
 mergedHost="merged-hosts"
 if [[ ${#LIPO_SRC_DIRS[@]} -gt 0 ]] && [[ $(should_execute_action "${mergedHost}-lipo") ]]; then
@@ -3053,14 +3057,22 @@ if [[ ${#LIPO_SRC_DIRS[@]} -gt 0 ]] && [[ $(should_execute_action "${mergedHost}
     echo "--- Merging and running lipo ---"
 
     # Allow passing lipo with --host-lipo
+    LIPO_PATH="${HOST_LIPO}"
     if [[ -z "${HOST_LIPO}" ]] ; then
         LIPO_PATH=$(xcrun_find_tool lipo)
-    else
-        LIPO_PATH="${HOST_LIPO}"
     fi
-    call "${SWIFT_SOURCE_DIR}"/utils/recursive-lipo --lipo=${LIPO_PATH} --copy-subdirs="$(get_host_install_prefix ${host})lib/swift $(get_host_install_prefix ${host})lib/swift_static" --destination="$(get_host_install_destdir ${mergedHost})" ${LIPO_SRC_DIRS[@]}
+
+    copy_subdirs=(
+        "$(get_host_install_prefix ${host})lib/swift"
+        "$(get_host_install_prefix ${host})lib/swift_static"
+    )
+
+    call "${SWIFT_SOURCE_DIR}/utils/recursive-lipo" \
+        --lipo=${LIPO_PATH}
+        --copy-subdirs="${copy_subdirs[@]}" \
+        --destination="$(get_host_install_destdir ${mergedHost})" \
+        ${LIPO_SRC_DIRS[@]}
 
     # Build and test the lipo-ed package.
     build_and_test_installable_package ${mergedHost}
 fi
-# END
