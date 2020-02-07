@@ -10,7 +10,10 @@
 #
 # ===----------------------------------------------------------------------===#
 
-import scheme_mock
+
+from __future__ import absolute_import, unicode_literals
+
+from . import scheme_mock
 
 
 class DumpTestCase(scheme_mock.SchemeMockTestCase):

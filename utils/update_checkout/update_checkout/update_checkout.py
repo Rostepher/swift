@@ -8,7 +8,7 @@
 # See https://swift.org/LICENSE.txt for license information
 # See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-from __future__ import print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
 import json
@@ -19,6 +19,8 @@ import sys
 import traceback
 from functools import reduce
 from multiprocessing import Lock, Pool, cpu_count, freeze_support
+
+import six
 
 from swift_build_support.swift_build_support import shell
 from swift_build_support.swift_build_support.SwiftBuildSupport import \
@@ -373,7 +375,7 @@ def repo_hashes(args, config):
                                   echo=False).strip()
         else:
             h = 'skip'
-        repos[repo_name] = str(h)
+        repos[repo_name] = six.text_type(h)
     return repos
 
 
@@ -562,7 +564,7 @@ By default, updates your checkouts of Swift, SourceKit, LLDB, and SwiftPM.""")
     if github_comment:
         regex_pr = r'(apple/[-a-zA-Z0-9_]+/pull/\d+|apple/[-a-zA-Z0-9_]+#\d+)'
         repos_with_pr = re.findall(regex_pr, github_comment)
-        print("Found related pull requests:", str(repos_with_pr))
+        print("Found related pull requests:", six.text_type(repos_with_pr))
         repos_with_pr = [pr.replace('/pull/', '#') for pr in repos_with_pr]
         cross_repos_pr = dict(pr.split('#') for pr in repos_with_pr)
 
