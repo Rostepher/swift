@@ -13,6 +13,9 @@
 #
 # ===---------------------------------------------------------------------===//
 
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
 import os
 import shutil
 import sys
@@ -28,6 +31,9 @@ from compare_perf_tests import Sample
 from compare_perf_tests import TestComparator
 from compare_perf_tests import main
 from compare_perf_tests import parse_args
+
+import six
+from six.moves import map, range, zip
 
 from test_utils import captured_output
 
@@ -102,7 +108,7 @@ class TestPerformanceTestSamples(unittest.TestCase):
 
     def assertEqualtats(self, stats, expected_stats):
         for actual, expected in zip(stats, expected_stats):
-            self.assertAlmostEquals(actual, expected, places=2)
+            self.assertAlmostEqual(actual, expected, places=2)
 
     def test_computes_mean_sd_cv(self):
         ss = self.samples
@@ -148,7 +154,7 @@ class TestPerformanceTestSamples(unittest.TestCase):
 
     def test_excludes_outliers(self):
         ss = [
-            Sample(*map(int, s.split()))
+            Sample(*list(map(int, s.split())))
             for s in "0 1 1000, 1 1 1025, 2 1 1050, 3 1 1075, 4 1 1100, "
             "5 1 1000, 6 1 1025, 7 1 1050, 8 1 1075, 9 1 1100, "
             "10 1 1050, 11 1 949, 12 1 1151".split(",")
@@ -179,7 +185,7 @@ class TestPerformanceTestSamples(unittest.TestCase):
 
     def test_excludes_outliers_top_only(self):
         ss = [
-            Sample(*map(int, s.split()))
+            Sample(*list(map(int, s.split())))
             for s in "0 1 1, 1 1 2, 2 1 2, 3 1 2, 4 1 3".split(",")
         ]
         self.samples = PerformanceTestSamples("Top", ss)
@@ -217,8 +223,8 @@ class TestPerformanceTestResult(unittest.TestCase):
         self.assertEqual(
             (r.num_samples, r.min, r.median, r.max), (3, 54383, 54512, 54601)
         )
-        self.assertAlmostEquals(r.mean, 54498.67, places=2)
-        self.assertAlmostEquals(r.sd, 109.61, places=2)
+        self.assertAlmostEqual(r.mean, 54498.67, places=2)
+        self.assertAlmostEqual(r.sd, 109.61, places=2)
         self.assertEqual(r.samples.count, 3)
         self.assertEqual(r.samples.num_samples, 3)
         self.assertEqual(
@@ -271,11 +277,12 @@ class TestPerformanceTestResult(unittest.TestCase):
             deq = deq.split(",")
             num_samples = deq.count("1")
             r = PerformanceTestResult(
-                ["0", "B", str(num_samples)] + deq, quantiles=True, delta=True
+                ["0", "B", six.text_type(num_samples)] + deq, quantiles=True, delta=True
             )
             self.assertEqual(r.samples.num_samples, num_samples)
             self.assertEqual(
-                [s.runtime for s in r.samples.all_samples], range(1, num_samples + 1)
+                [s.runtime for s in r.samples.all_samples],
+                list(range(1, num_samples + 1)),
             )
 
         delta_encoded_quantiles = """
@@ -315,7 +322,7 @@ class TestPerformanceTestResult(unittest.TestCase):
 1,,1,1,1,1,1,1,1,1,,1,1,1,1,1,1,1,1,1,
 1,,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 1,,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"""
-        map(validatePTR, delta_encoded_quantiles.split("\n")[1:])
+        list(map(validatePTR, delta_encoded_quantiles.split("\n")[1:]))
 
     def test_init_meta(self):
         # #,TEST,SAMPLES,MIN(μs),MAX(μs),MEAN(μs),SD(μs),MEDIAN(μs),…
@@ -357,14 +364,14 @@ class TestPerformanceTestResult(unittest.TestCase):
         self.assertEqual(
             (r.samples.count, r.samples.min, r.samples.max), (2, 715, 1259)
         )
-        self.assertEquals(r.max_rss, 32768)
+        self.assertEqual(r.max_rss, 32768)
         self.assertEqual((r.mem_pages, r.involuntary_cs, r.yield_count), (8, 28, 15))
 
     def test_repr(self):
         log_line = "1,AngryPhonebook,20,10664,12933,11035,576,10884"
         r = PerformanceTestResult(log_line.split(","))
         self.assertEqual(
-            str(r),
+            six.text_type(r),
             "<PerformanceTestResult name:'AngryPhonebook' samples:20 "
             "min:10664 max:12933 mean:11035 sd:576 median:10884>",
         )
@@ -379,7 +386,7 @@ class TestPerformanceTestResult(unittest.TestCase):
         )[
             1:
         ]
-        results = map(PerformanceTestResult, [line.split(",") for line in tests])
+        results = list(map(PerformanceTestResult, [line.split(",") for line in tests]))
         results[2].setup = 9
         results[3].setup = 7
 
@@ -432,20 +439,20 @@ class TestResultComparison(unittest.TestCase):
     def test_init(self):
         rc = ResultComparison(self.r1, self.r2)
         self.assertEqual(rc.name, "AngryPhonebook")
-        self.assertAlmostEquals(rc.ratio, 12325.0 / 11616.0)
-        self.assertAlmostEquals(rc.delta, (((11616.0 / 12325.0) - 1) * 100), places=3)
+        self.assertAlmostEqual(rc.ratio, 12325.0 / 11616.0)
+        self.assertAlmostEqual(rc.delta, (((11616.0 / 12325.0) - 1) * 100), places=3)
         # handle test results that sometimes change to zero, when compiler
         # optimizes out the body of the incorrectly written test
         rc = ResultComparison(self.r0, self.r0)
         self.assertEqual(rc.name, "GlobalClass")
-        self.assertAlmostEquals(rc.ratio, 1)
-        self.assertAlmostEquals(rc.delta, 0, places=3)
+        self.assertAlmostEqual(rc.ratio, 1)
+        self.assertAlmostEqual(rc.delta, 0, places=3)
         rc = ResultComparison(self.r0, self.r01)
-        self.assertAlmostEquals(rc.ratio, 0, places=3)
-        self.assertAlmostEquals(rc.delta, 2000000, places=3)
+        self.assertAlmostEqual(rc.ratio, 0, places=3)
+        self.assertAlmostEqual(rc.delta, 2000000, places=3)
         rc = ResultComparison(self.r01, self.r0)
-        self.assertAlmostEquals(rc.ratio, 20001)
-        self.assertAlmostEquals(rc.delta, -99.995, places=3)
+        self.assertAlmostEqual(rc.ratio, 20001)
+        self.assertAlmostEqual(rc.delta, -99.995, places=3)
         # disallow comparison of different test results
         self.assertRaises(AssertionError, ResultComparison, self.r0, self.r1)
 
@@ -492,9 +499,11 @@ class OldAndNewLog(unittest.TestCase):
     old_results = dict(
         [
             (r.name, r)
-            for r in map(
-                PerformanceTestResult,
-                [line.split(",") for line in old_log_content.splitlines()],
+            for r in list(
+                map(
+                    PerformanceTestResult,
+                    [line.split(",") for line in old_log_content.splitlines()],
+                )
             )
         ]
     )
@@ -502,9 +511,11 @@ class OldAndNewLog(unittest.TestCase):
     new_results = dict(
         [
             (r.name, r)
-            for r in map(
-                PerformanceTestResult,
-                [line.split(",") for line in new_log_content.splitlines()],
+            for r in list(
+                map(
+                    PerformanceTestResult,
+                    [line.split(",") for line in new_log_content.splitlines()],
+                )
             )
         ]
     )
@@ -528,9 +539,9 @@ Total performance tests executed: 1
         parser = LogParser()
         results = parser.parse_results(log.splitlines())
         self.assertTrue(isinstance(results[0], PerformanceTestResult))
-        self.assertEquals(results[0].name, "Array.append.Array.Int?")
-        self.assertEquals(results[1].name, "Bridging.NSArray.as!.Array.NSString")
-        self.assertEquals(results[2].name, "Flatten.Array.Tuple4.lazy.for-in.Reserve")
+        self.assertEqual(results[0].name, "Array.append.Array.Int?")
+        self.assertEqual(results[1].name, "Bridging.NSArray.as!.Array.NSString")
+        self.assertEqual(results[2].name, "Flatten.Array.Tuple4.lazy.for-in.Reserve")
 
     def test_parse_results_tab_delimited(self):
         log = "34\tBitCount\t20\t3\t4\t4\t0\t4"
@@ -734,8 +745,8 @@ Totals,2"""
         self.assertEqual(result.min, 350815)
         self.assertEqual(result.max, 376131)
         self.assertEqual(result.median, 358817)
-        self.assertAlmostEquals(result.sd, 8443.37, places=2)
-        self.assertAlmostEquals(result.mean, 361463.25, places=2)
+        self.assertAlmostEqual(result.sd, 8443.37, places=2)
+        self.assertAlmostEqual(result.mean, 361463.25, places=2)
         self.assertEqual(result.num_samples, 8)
         samples = result.samples
         self.assertTrue(isinstance(samples, PerformanceTestSamples))
@@ -1167,7 +1178,7 @@ class Test_compare_perf_tests_main(OldAndNewLog, FileSystemIntegration):
             with open(report_file, "r") as f:
                 report = f.read()
             # because print adds newline, add one here, too:
-            report_file = str(report + "\n")
+            report_file = six.text_type(report + "\n")
         else:
             report_file = None
 

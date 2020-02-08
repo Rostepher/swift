@@ -12,13 +12,17 @@
 #
 # ===---------------------------------------------------------------------===//
 
+from __future__ import absolute_import
 from __future__ import print_function
+from __future__ import unicode_literals
 
 import functools
 import multiprocessing
 import os
 import re
 import subprocess
+
+from six.moves import map, zip
 
 
 BENCHMARK_OUTPUT_RE = re.compile(r"\d+,([^,]+)")
@@ -132,7 +136,7 @@ class BenchmarkDriver(object):
             z = zip([self] * len(prepared_input), prepared_input)
             results = p.map_async(_unwrap_self, z).get(999999)
         else:
-            results = map(self.process_input, prepared_input)
+            results = list(map(self.process_input, prepared_input))
 
         def reduce_results(acc, r):
             acc["result"].append(r)

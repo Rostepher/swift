@@ -25,6 +25,10 @@ class `BenchmarkDoctor` analyzes performance tests, implements `check` COMMAND.
 
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import argparse
 import glob
 import logging
@@ -36,6 +40,10 @@ import sys
 import time
 
 from compare_perf_tests import LogParser
+
+import six
+from six.moves import map, range, reduce, zip
+
 
 DRIVER_DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -112,7 +120,7 @@ class BenchmarkDriver(object):
             for line in self._invoke(self._cmd_list_benchmarks).split("\n")[1:-1]
         ]
         # unzip list of pairs into 2 lists
-        test_numbers, self.all_tests = map(list, zip(*number_name_pairs))
+        test_numbers, self.all_tests = list(map(list, zip(*number_name_pairs)))
         self.test_number = dict(zip(self.all_tests, test_numbers))
         if self.args.filters:
             return self._tests_matching_patterns()
@@ -249,19 +257,21 @@ class BenchmarkDriver(object):
             print(format(values))
 
         def result_values(r):
-            return map(
-                str,
-                [
-                    r.test_num,
-                    r.name,
-                    r.num_samples,
-                    r.min,
-                    r.samples.q1,
-                    r.median,
-                    r.samples.q3,
-                    r.max,
-                    r.max_rss,
-                ],
+            return list(
+                map(
+                    six.text_type,
+                    [
+                        r.test_num,
+                        r.name,
+                        r.num_samples,
+                        r.min,
+                        r.samples.q1,
+                        r.median,
+                        r.samples.q3,
+                        r.max,
+                        r.max_rss,
+                    ],
+                )
             )
 
         header = [
@@ -370,7 +380,7 @@ class MarkdownReportHandler(logging.StreamHandler):
         msg = self.format(record)
         stream = self.stream
         try:
-            if isinstance(msg, unicode) and getattr(stream, "encoding", None):
+            if isinstance(msg, six.text_type) and getattr(stream, "encoding", None):
                 stream.write(msg.encode(stream.encoding))
             else:
                 stream.write(msg)
@@ -477,7 +487,7 @@ class BenchmarkDoctor(object):
     @staticmethod
     def _select(measurements, num_iters=None, opt_level="O"):
         prefix = measurements["name"] + " " + opt_level
-        prefix += "" if num_iters is None else (" i" + str(num_iters))
+        prefix += "" if num_iters is None else (" i" + six.text_type(num_iters))
         return [
             series for name, series in measurements.items() if name.startswith(prefix)
         ]
@@ -621,7 +631,7 @@ class BenchmarkDoctor(object):
 
     @staticmethod
     def _adjusted_1s_samples(runtime):
-        u"""Return sample count that can be taken in approximately 1 second.
+        """Return sample count that can be taken in approximately 1 second.
 
         Based on the runtime (μs) of one sample taken with num-iters=1.
         """

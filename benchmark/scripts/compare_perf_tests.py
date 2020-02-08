@@ -27,7 +27,9 @@ class `ReportFormatter` creates the test comparison report in specified format.
 
 """
 
+from __future__ import absolute_import
 from __future__ import print_function
+from __future__ import unicode_literals
 
 import argparse
 import re
@@ -36,9 +38,12 @@ from bisect import bisect, bisect_left, bisect_right
 from collections import namedtuple
 from math import ceil, sqrt
 
+import six
+from six.moves import map, range, reduce, zip
+
 
 class Sample(namedtuple("Sample", "i num_iters runtime")):
-    u"""Single benchmark measurement.
+    """Single benchmark measurement.
 
     Initialized with:
     `i`: ordinal number of the sample taken,
@@ -52,7 +57,7 @@ class Sample(namedtuple("Sample", "i num_iters runtime")):
 
 
 class Yield(namedtuple("Yield", "before_sample after")):
-    u"""Meta-measurement of when the Benchmark_X voluntarily yielded process.
+    """Meta-measurement of when the Benchmark_X voluntarily yielded process.
 
     `before_sample`: index of measurement taken just after returning from yield
     `after`: time elapsed since the previous yield in microseconds (μs)
@@ -185,17 +190,20 @@ class PerformanceTestSamples(object):
 
     @property
     def sd(self):
-        u"""Standard Deviation (μs)."""
+        """Standard Deviation (μs)."""
         return 0 if self.count < 2 else sqrt(self.S_runtime / (self.count - 1))
 
     @staticmethod
-    def running_mean_variance((k, M_, S_), x):
+    def running_mean_variance(k_M_S_tuple, x):
         """Compute running variance, B. P. Welford's method.
 
         See Knuth TAOCP vol 2, 3rd edition, page 232, or
         https://www.johndcook.com/blog/standard_deviation/
         M is mean, Standard Deviation is defined as sqrt(S/k-1)
         """
+
+        (k, M_, S_) = k_M_S_tuple
+
         k = float(k + 1)
         M = M_ + (x - M_) / k
         S = S_ + (x - M_) * (x - M)
@@ -218,7 +226,7 @@ class PerformanceTestSamples(object):
 
 
 class PerformanceTestResult(object):
-    u"""Result from executing an individual Swift Benchmark Suite benchmark.
+    """Result from executing an individual Swift Benchmark Suite benchmark.
 
     Reported by the test driver (Benchmark_O, Benchmark_Onone, Benchmark_Osize
     or Benchmark_Driver).
@@ -315,7 +323,7 @@ class PerformanceTestResult(object):
         """
         # Statistics
         if self.samples and r.samples:
-            map(self.samples.add, r.samples.samples)
+            list(map(self.samples.add, r.samples.samples))
             sams = self.samples
             self.num_samples = sams.num_samples
             self.min, self.max, self.median, self.mean, self.sd = (
@@ -544,7 +552,7 @@ class TestComparator(object):
         def compare(name):
             return ResultComparison(old_results[name], new_results[name])
 
-        comparisons = map(compare, comparable_tests)
+        comparisons = list(map(compare, comparable_tests))
 
         def partition(l, p):
             return reduce(lambda x, y: x[not p(y)].append(y) or x, l, ([], []))
@@ -608,18 +616,18 @@ class ReportFormatter(object):
         return (
             (
                 result.name,
-                str(result.min),
-                str(result.max),
-                str(int(result.mean)),
-                str(result.max_rss) if result.max_rss else "—",
+                six.text_type(result.min),
+                six.text_type(result.max),
+                six.text_type(int(result.mean)),
+                six.text_type(result.max_rss) if result.max_rss else "—",
             )
             if isinstance(result, PerformanceTestResult)
             else
             # isinstance(result, ResultComparison)
             (
                 result.name,
-                str(result.old.min),
-                str(result.new.min),
+                six.text_type(result.old.min),
+                six.text_type(result.new.min),
                 "{0:+.1f}%".format(result.delta),
                 "{0:.2f}x{1}".format(result.ratio, " (?)" if result.is_dubious else ""),
             )
@@ -657,7 +665,7 @@ class ReportFormatter(object):
         results += self.comparator.added + self.comparator.removed
 
         widths = [
-            map(len, columns)
+            list(map(len, columns))
             for columns in [
                 ReportFormatter.PERFORMANCE_TEST_RESULT_HEADER,
                 ReportFormatter.RESULT_COMPARISON_HEADER,
@@ -666,7 +674,7 @@ class ReportFormatter(object):
         ]
 
         def max_widths(maximum, widths):
-            return map(max, zip(maximum, widths))
+            return list(map(max, zip(maximum, widths)))
 
         return reduce(max_widths, widths, [0] * 5)
 
@@ -690,7 +698,7 @@ class ReportFormatter(object):
             labels = (
                 column_labels
                 if not self.single_table
-                else map(label_formatter, (title,) + column_labels[1:])
+                else list(map(label_formatter, (title,) + column_labels[1:]))
             )
             h = (
                 ("" if not self.header_printed else SEPARATOR)

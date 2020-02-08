@@ -13,14 +13,20 @@
 #
 # ===---------------------------------------------------------------------===//
 
+from __future__ import absolute_import
+from __future__ import unicode_literals
+
 import logging
 import os
 import time
 import unittest
-from StringIO import StringIO
 from imp import load_source
 
 from compare_perf_tests import PerformanceTestResult
+
+import six
+from six import StringIO
+from six.moves import zip
 
 from test_utils import Mock, MockLoggingHandler, Stub, captured_output
 
@@ -39,7 +45,7 @@ MarkdownReportHandler = Benchmark_Driver.MarkdownReportHandler
 
 class Test_parse_args(unittest.TestCase):
     def assert_contains(self, texts, output):
-        assert not isinstance(texts, str)
+        assert not isinstance(texts, six.string_types)
         for text in texts:
             self.assertIn(text, output)
 
@@ -190,8 +196,8 @@ class TestBenchmarkDriverInitialization(unittest.TestCase):
         self.subprocess_mock.assert_called_all_expected()
         self.assertEqual(driver.tests, ["Benchmark1", "Benchmark2"])
         self.assertEqual(driver.all_tests, ["Benchmark1", "Benchmark2"])
-        self.assertEquals(driver.test_number["Benchmark1"], "1")
-        self.assertEquals(driver.test_number["Benchmark2"], "2")
+        self.assertEqual(driver.test_number["Benchmark1"], "1")
+        self.assertEqual(driver.test_number["Benchmark2"], "2")
 
     list_all_tests = (
         "/benchmarks/Benchmark_O --list --delim=\t --skip-tags=".split(" "),
@@ -330,10 +336,10 @@ class TestBenchmarkDriverRunningTests(unittest.TestCase):
         """
         r = self.driver.run("b")
         self.assertTrue(self.parser_stub.results_from_string_called)
-        self.assertEquals(r.name, "b1")  # non-matching name, just 1st result
+        self.assertEqual(r.name, "b1")  # non-matching name, just 1st result
         r = self.driver.run()
         self.assertTrue(isinstance(r, dict))
-        self.assertEquals(r["b1"].name, "b1")
+        self.assertEqual(r["b1"].name, "b1")
 
     def test_measure_memory(self):
         self.driver.run("b", measure_memory=True)
@@ -528,7 +534,7 @@ class TestMarkdownReportHandler(unittest.TestCase):
         self.handler = MarkdownReportHandler(self.stream)
 
     def assert_contains(self, texts):
-        assert not isinstance(texts, str)
+        assert not isinstance(texts, six.string_types)
         for text in texts:
             self.assertIn(text, self.stream.getvalue())
 
@@ -595,7 +601,7 @@ class TestBenchmarkDoctor(unittest.TestCase):
         self.logs = self._doctor_log_handler.messages
 
     def assert_contains(self, texts, output):
-        assert not isinstance(texts, str)
+        assert not isinstance(texts, six.string_types)
         for text in texts:
             self.assertIn(text, output)
 

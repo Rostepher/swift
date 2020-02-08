@@ -12,10 +12,17 @@
 #
 # ===---------------------------------------------------------------------===//
 
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import argparse
 import os
 import subprocess
 import sys
+
+import six
+from six.moves import map, zip
 
 DRIVER_LIBRARY_PATH = "@PATH_TO_DRIVER_LIBRARY@"
 sys.path.append(DRIVER_LIBRARY_PATH)
@@ -56,7 +63,9 @@ class DTraceResult(perf_test_driver.Result):
         print(cls.data_format(max_test_len).format(*headers))
 
     def print_data(self, max_test_len):
-        result = [self.get_name(), self.get_result()] + map(str, self.output)
+        result = [self.get_name(), self.get_result()] + list(
+            map(six.text_type, self.output)
+        )
         if self.csv_output:
             print(",".join(result))
             return
@@ -146,7 +155,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-filter",
-        type=str,
+        type=six.text_type,
         default=None,
         help="Filter out any test that does not match the given regex",
     )

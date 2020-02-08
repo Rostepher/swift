@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import unicode_literals
 
 import argparse
 import os
 import shutil
 import subprocess
+
+import six
 
 
 def perform_build(args, swiftbuild_path, config, binary_name, opt_flag):
@@ -42,9 +45,9 @@ def perform_build(args, swiftbuild_path, config, binary_name, opt_flag):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--verbose", "-v", action="store_true")
-    parser.add_argument("--package-path", type=str, required=True)
-    parser.add_argument("--build-path", type=str, required=True)
-    parser.add_argument("--toolchain", type=str, required=True)
+    parser.add_argument("--package-path", type=six.text_type, required=True)
+    parser.add_argument("--build-path", type=six.text_type, required=True)
+    parser.add_argument("--toolchain", type=six.text_type, required=True)
 
     args = parser.parse_args()
 

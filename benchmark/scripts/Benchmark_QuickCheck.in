@@ -12,9 +12,15 @@
 #
 # ===---------------------------------------------------------------------===//
 
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import os
 import subprocess
 import sys
+
+import six
 
 sys.path.append("@PATH_TO_DRIVER_LIBRARY@")
 
@@ -103,7 +109,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--filter",
-        type=str,
+        type=six.text_type,
         default=None,
         help="Filter out any test that does not match the given regex",
     )

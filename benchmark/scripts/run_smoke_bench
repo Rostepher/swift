@@ -21,7 +21,9 @@
 #
 # ===---------------------------------------------------------------------===//
 
+from __future__ import absolute_import
 from __future__ import print_function
+from __future__ import unicode_literals
 
 import argparse
 import glob
@@ -31,6 +33,10 @@ import sys
 from imp import load_source
 
 from compare_perf_tests import LogParser, TestComparator, create_report
+
+import six
+from six.moves import zip
+
 
 # import Benchmark_Driver  # doesn't work because it misses '.py' extension
 Benchmark_Driver = load_source(
@@ -105,7 +111,7 @@ def main():
     )
     argparser.add_argument(
         "-o",
-        type=str,
+        type=six.text_type,
         help="In addition to stdout, write the results into a markdown file",
     )
     argparser.add_argument(
@@ -127,13 +133,16 @@ def main():
         default=8,
     )
     argparser.add_argument(
-        "-platform", type=str, help="The benchmark build platform", default="macosx"
+        "-platform",
+        type=six.text_type,
+        help="The benchmark build platform",
+        default="macosx",
     )
     argparser.add_argument(
-        "oldbuilddir", nargs=1, type=str, help="old benchmark build directory"
+        "oldbuilddir", nargs=1, type=six.text_type, help="old benchmark build directory"
     )
     argparser.add_argument(
-        "newbuilddir", nargs=1, type=str, help="new benchmark build directory"
+        "newbuilddir", nargs=1, type=six.text_type, help="new benchmark build directory"
     )
     args = argparser.parse_args()
     VERBOSE = args.verbose
@@ -241,7 +250,7 @@ def test_performance(
     while len(changed) > 0 and unchanged_length_count < num_reruns:
         i += 1
         if VERBOSE:
-            log("        test again: " + str([test.name for test in changed]))
+            log("        test again: " + six.text_type([test.name for test in changed]))
         results = [
             merge(the_results, measure(driver, [test.name for test in changed], i))
             for the_results, driver in zip(results, [old, new])
@@ -279,8 +288,10 @@ def report_code_size(opt_level, old_dir, new_dir, platform, output_file):
             bname = os.path.basename(oldfile)
 
             def result_line(value):
-                v = "," + str(value)
-                return str(idx) + "," + bname + ",1" + (v * 3) + ",0" + v + "\n"
+                v = "," + six.text_type(value)
+                return (
+                    six.text_type(idx) + "," + bname + ",1" + (v * 3) + ",0" + v + "\n"
+                )
 
             old_lines += result_line(oldsize)
             new_lines += result_line(newsize)

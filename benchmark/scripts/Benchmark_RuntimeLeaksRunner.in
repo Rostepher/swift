@@ -12,10 +12,16 @@
 #
 # ===---------------------------------------------------------------------===//
 
+from __future__ import absolute_import
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import json
 import os
 import subprocess
 import sys
+
+import six
 
 sys.path.append("@PATH_TO_DRIVER_LIBRARY@")
 
@@ -53,7 +59,7 @@ class LeaksRunnerResult(perf_test_driver.Result):
 
     def get_count(self):
         if self.count is not None:
-            return str(self.count)
+            return six.text_type(self.count)
         return "N/A"
 
     def print_data(self, max_test_len):
@@ -149,7 +155,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-filter",
-        type=str,
+        type=six.text_type,
         default=None,
         help="Filter out any test that does not match the given regex",
     )
