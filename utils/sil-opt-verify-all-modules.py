@@ -9,7 +9,7 @@
 # See https://swift.org/LICENSE.txt for license information
 # See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-from __future__ import print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
 import glob
@@ -19,6 +19,8 @@ import pipes
 import subprocess
 import sys
 import tempfile
+
+import six
 
 
 def get_verify_toolchain_modules_commands(toolchain_dir, sil_opt):
@@ -103,7 +105,7 @@ def run_commands_in_parallel(commands):
     makefile = ".DEFAULT_GOAL := all\n"
     targets = []
     for c in commands:
-        target_name = "target" + str(len(targets))
+        target_name = "target" + six.text_type(len(targets))
         targets.append(target_name)
         makefile += target_name + ":\n"
         makefile += \
@@ -120,7 +122,7 @@ def run_commands_in_parallel(commands):
     subprocess.check_call([
         'make',
         '-C', temp_dir,
-        '-j', str(max_processes),
+        '-j', six.text_type(max_processes),
         '--keep-going'
     ])
 

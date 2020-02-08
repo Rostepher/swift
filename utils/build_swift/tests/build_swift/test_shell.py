@@ -132,7 +132,7 @@ class TestHelpers(unittest.TestCase):
     # -------------------------------------------------------------------------
     # _normalize_args
 
-    def test_normalize_args_splits_basestring(self):
+    def test_normalize_args_splits_str(self):
         command = 'rm -rf /Applications/Xcode.app'
 
         self.assertEqual(
@@ -248,7 +248,7 @@ class TestDecorators(unittest.TestCase):
     # -------------------------------------------------------------------------
     # _normalize_command
 
-    def test_normalize_command_basestring_command_noop(self):
+    def test_normalize_command_str_command_noop(self):
         test_command = 'touch test.txt'
 
         @shell._normalize_command

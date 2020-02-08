@@ -27,7 +27,7 @@ class `ReportFormatter` creates the test comparison report in specified format.
 
 """
 
-from __future__ import print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
 import re

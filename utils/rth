@@ -9,7 +9,7 @@
 # See https://swift.org/LICENSE.txt for license information
 # See https://swift.org/CONTRIBUTORS.txt for the list of Swift project authors
 
-from __future__ import print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
 import glob
@@ -20,6 +20,9 @@ import shlex
 import shutil
 import subprocess
 import sys
+
+import six
+
 
 VERBOSE = True
 
@@ -105,12 +108,12 @@ class ResilienceTest(object):
                 compiler_flags
             verbose_print_command(command)
             returncode = subprocess.call(command)
-            assert returncode == 0, str(command)
+            assert returncode == 0, six.text_type(command)
 
             codesign_cmd = self.target_codesign + [output_dylib]
             verbose_print_command(codesign_cmd)
             returncode = subprocess.call(codesign_cmd)
-            assert returncode == 0, str(codesign_cmd)
+            assert returncode == 0, six.text_type(codesign_cmd)
 
             if not self.no_symbol_diff:
                 # Global symbols only, don't display address or type, don't
@@ -123,7 +126,7 @@ class ResilienceTest(object):
 
                 with open(symbol_file, "w") as handle:
                     returncode = subprocess.call(nm_cmd, stdout=handle)
-                assert returncode == 0, str(nm_cmd)
+                assert returncode == 0, six.text_type(nm_cmd)
 
     def compare_symbols(self):
         if self.no_symbol_diff:
@@ -160,7 +163,7 @@ class ResilienceTest(object):
                 compiler_flags
             verbose_print_command(command)
             returncode = subprocess.call(command)
-            assert returncode == 0, str(command)
+            assert returncode == 0, six.text_type(command)
 
     def configs(self):
         for config1 in self.config_dir_map:
@@ -211,12 +214,12 @@ class ResilienceTest(object):
             command = self.target_build_swift + compiler_flags
             verbose_print_command(command)
             returncode = subprocess.call(command)
-            assert returncode == 0, str(command)
+            assert returncode == 0, six.text_type(command)
 
             codesign_cmd = self.target_codesign + [output_obj]
             verbose_print_command(codesign_cmd)
             returncode = subprocess.call(codesign_cmd)
-            assert returncode == 0, str(codesign_cmd)
+            assert returncode == 0, six.text_type(codesign_cmd)
 
     def execute(self):
         for config1, config2 in self.configs():
@@ -233,7 +236,7 @@ class ResilienceTest(object):
             if platform.system() == 'Windows':
                 os.chdir(self.config_dir_map[config1])
             returncode = subprocess.call(command)
-            assert returncode == 0, str(command)
+            assert returncode == 0, six.text_type(command)
 
 
 def main():

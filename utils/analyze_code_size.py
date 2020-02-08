@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 import argparse
 import re
 import subprocess
 import sys
+
+import six
 
 
 useCSV = False
@@ -12,12 +16,12 @@ useCSV = False
 def main(arguments):
     parser = argparse.ArgumentParser(
         description='Analyze the code size in a binary')
-    parser.add_argument('-arch', type=str,
+    parser.add_argument('-arch', type=six.text_type,
                         help='the arch to look at', default='arm64')
     parser.add_argument('-categorize', action='store_true',
                         help='categorize symbols', dest='build_categories',
                         default=False)
-    parser.add_argument('-list-category', type=str,
+    parser.add_argument('-list-category', type=six.text_type,
                         help='list symbols in category')
     parser.add_argument('-csv', dest='use_csv', action='store_true',
                         help='print results as csv')
@@ -251,7 +255,7 @@ class Categories(object):
         if syms:
             for symbol in syms:
                 print(symbol.mangled_name + " " + symbol.name + " " +
-                      str(symbol.size))
+                      six.text_type(symbol.size))
 
     def print_category(self, category):
         category = self.categories.get(category)
@@ -348,7 +352,7 @@ def show_all(segments):
         for section in segment.sections:
             symbols = section.symbols
             for sym in symbols:
-                print(str(sym.size) + ' ' + sym.name + ' ' + sym.mangled_name)
+                print(six.text_type(sym.size) + ' ' + sym.name + ' ' + sym.mangled_name)
 
 
 def categorize(segments):

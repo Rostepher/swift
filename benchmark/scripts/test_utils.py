@@ -22,10 +22,13 @@ on Python 2.7.
 common unit testing patterns that is used in this project.
 """
 
+from __future__ import absolute_import, unicode_literals
+
 import logging
 import sys
-from StringIO import StringIO
 from contextlib import contextmanager
+
+from six import StringIO
 
 
 @contextmanager

@@ -4,10 +4,13 @@
 # strings matching the regex /< (i[0-9]+) \s+ (0x[0-9A-Fa-f]+) >/x with the
 # decimal literal equivalent that would really appear in printed LLVM IR.
 
-from __future__ import print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import re
 import sys
+
+import six
+
 
 hex = re.compile(r"""<(i([0-9]+)\s+)0x([0-9A-Fa-f_]+)>""")
 
@@ -24,7 +27,7 @@ def hexReplace(match):
     # greater than 2^(bits - 1)
     if value >= (1 << (bits - 1)):
         value -= 1 << bits
-    return ty + str(value)
+    return ty + six.text_type(value)
 
 
 for line in sys.stdin:

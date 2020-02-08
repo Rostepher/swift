@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
 import errno
@@ -12,6 +12,9 @@ import shutil
 import subprocess
 import sys
 import traceback
+
+import six
+
 
 BARE_INTERFACE_SEARCH_PATHS = [
     "usr/lib/swift",
@@ -277,7 +280,7 @@ def process_module(module_file):
         module_cache_path = ""
         if args.module_cache_path:
             module_cache_path = os.path.join(args.module_cache_path,
-                                             str(os.getpid()))
+                                             six.text_type(os.getpid()))
             command_args += ('-module-cache-path', module_cache_path)
         if args.debug_crash_compiler:
             command_args += ('-debug-crash-immediately',)

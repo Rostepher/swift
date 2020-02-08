@@ -21,17 +21,17 @@
 #
 # ===---------------------------------------------------------------------===//
 
-from __future__ import print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
 import glob
 import os
 import subprocess
 import sys
+from imp import load_source
 
 from compare_perf_tests import LogParser, TestComparator, create_report
 
-from imp import load_source
 # import Benchmark_Driver  # doesn't work because it misses '.py' extension
 Benchmark_Driver = load_source(
     'Benchmark_Driver', os.path.join(os.path.dirname(

@@ -25,6 +25,8 @@ class `BenchmarkDoctor` analyzes performance tests, implements `check` COMMAND.
 
 """
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 import argparse
 import glob
 import logging
@@ -36,6 +38,8 @@ import sys
 import time
 
 from compare_perf_tests import LogParser
+
+import six
 
 DRIVER_DIR = os.path.dirname(os.path.realpath(__file__))
 
@@ -303,7 +307,7 @@ class MarkdownReportHandler(logging.StreamHandler):
         msg = self.format(record)
         stream = self.stream
         try:
-            if (isinstance(msg, unicode) and
+            if (isinstance(msg, six.string_types) and
                     getattr(stream, 'encoding', None)):
                 stream.write(msg.encode(stream.encoding))
             else:
@@ -405,7 +409,7 @@ class BenchmarkDoctor(object):
     @staticmethod
     def _select(measurements, num_iters=None, opt_level='O'):
         prefix = measurements['name'] + ' ' + opt_level
-        prefix += '' if num_iters is None else (' i' + str(num_iters))
+        prefix += '' if num_iters is None else (' i' + six.text_type(num_iters))
         return [series for name, series in measurements.items()
                 if name.startswith(prefix)]
 

@@ -2,7 +2,7 @@
 # GYB: Generate Your Boilerplate (improved names welcome; at least
 # this one's short).  See -h output for instructions
 
-from __future__ import print_function
+from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import re
@@ -11,17 +11,8 @@ import textwrap
 import tokenize
 from bisect import bisect
 
-
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from io import StringIO
-
-
-try:
-    basestring
-except NameError:
-    basestring = str
+import six
+from six import StringIO
 
 
 def get_line_starts(s):
@@ -731,7 +722,7 @@ class Code(ASTNode):
         # If we got a result, the code was an expression, so append
         # its value
         if result is not None \
-                or (isinstance(result, basestring) and result != ''):
+                or (isinstance(result, six.string_types) and result != ''):
             from numbers import Number, Integral
             result_string = None
             if isinstance(result, Number) and not isinstance(result, Integral):

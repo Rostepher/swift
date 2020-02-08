@@ -425,17 +425,17 @@ class BuildScriptInvocation(object):
             "--libicu-build-type", args.libicu_build_variant,
             "--xctest-build-type", args.build_variant,
             "--llbuild-build-type", args.build_variant,
-            "--swift-enable-assertions", str(args.swift_assertions).lower(),
-            "--swift-stdlib-enable-assertions", str(
+            "--swift-enable-assertions", six.text_type(args.swift_assertions).lower(),
+            "--swift-stdlib-enable-assertions", six.text_type(
                 args.swift_stdlib_assertions).lower(),
-            "--swift-analyze-code-coverage", str(
+            "--swift-analyze-code-coverage", six.text_type(
                 args.swift_analyze_code_coverage).lower(),
-            "--llbuild-enable-assertions", str(
+            "--llbuild-enable-assertions", six.text_type(
                 args.llbuild_assertions).lower(),
-            "--lldb-assertions", str(
+            "--lldb-assertions", six.text_type(
                 args.lldb_assertions).lower(),
             "--cmake-generator", args.cmake_generator,
-            "--build-jobs", str(args.build_jobs),
+            "--build-jobs", six.text_type(args.build_jobs),
             "--common-cmake-options=%s" % ' '.join(
                 pipes.quote(opt) for opt in cmake.common_options()),
             "--build-args=%s" % ' '.join(
@@ -1105,7 +1105,7 @@ def main_preset():
     if args.distcc:
         build_script_args += ["--distcc"]
     if args.build_jobs:
-        build_script_args += ["--jobs", str(args.build_jobs)]
+        build_script_args += ["--jobs", six.text_type(args.build_jobs)]
     if args.swiftsyntax_install_prefix:
         build_script_args += ["--install-swiftsyntax",
                               "--install-destdir",
